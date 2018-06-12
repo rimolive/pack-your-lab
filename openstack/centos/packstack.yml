@@ -1,0 +1,24 @@
+---
+- hosts: osp
+  name: Install OpenStack using Packstack
+  tasks:
+    - name: generate packstack config file
+      shell: packstack --gen-answer-file={{ osp.resource_path }}/packstack-answers.cfg
+
+    - name: configure packstack
+      block:
+        - shell: openstack-config --set {{ osp.resource_path }}/packstack-answers.cfg general {{ item.key }} {{ item.value }}
+          with_dict:
+            CONFIG_NEUTRON_OVS_BRIDGE_MAPPINGS: physnet1:br-ex
+            CONFIG_PROVISION_DEMO: n
+            CONFIG_NEUTRON_OVS_BRIDGE_IFACES: "br-ex:{{ osp.network.nic }}"
+            CONFIG_DEFAULT_PASSWORD: openstack
+            CONFIG_KEYSTONE_ADMIN_PW: openstack
+            CONFIG_SAHARA_INSTALL: y
+            CONFIG_TROVE_INSTALL: y
+
+        - shell: openstack-config --set {{ osp.resource_path }}/packstack-answers.cfg general {{ item.key }} {{ item.value }}
+          with_dict: "{{ osp.packstack }}"
+
+    - name: packstack
+      shell: packstack --answer-file={{ osp.resource_path }}/packstack-answers.cfg --timeout=6000 > /tmp/packstack.log

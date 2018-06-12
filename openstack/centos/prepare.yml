@@ -1,0 +1,42 @@
+---
+- hosts: osp
+  name: Prepare OpenStack Installation
+
+  tasks:
+    - name: create resource folder
+      file:
+        path: "{{ osp.resource_path }}"
+        state: directory
+
+    - name: upgrade all packages
+      yum:
+        name: '*'
+        state: latest
+
+    - name: install epel
+      yum:
+        name: https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+        state: latest
+
+    - name: install packages
+      yum:
+        name: "{{ item }}"
+        state: present
+      with_items:
+        - centos-release-openstack-queens
+        - vim
+
+    - name: upgrade all packages
+      yum:
+        name: '*'
+        state: latest
+
+    - name: disable network manager
+      shell: >
+        systemctl disable NetworkManager ; systemctl stop NetworkManager ; systemctl enable network ; systemctl start network
+
+    - name: disable firewalld
+      systemd:
+        name: firewalld
+        state: stopped
+        enabled: no
